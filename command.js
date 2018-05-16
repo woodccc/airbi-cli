@@ -5,7 +5,6 @@ const ora = require('ora');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const download = require('download-git-repo');
-const cmd = require('node-cmd');
 
 const log = console.log;
 const spinner = ora('Loading unicorns');
@@ -28,25 +27,6 @@ const questions = [
 		}
 	}
 ]
-inquirer.prompt(questions).then(answers => {
-	const { projectName, type } = answers
-	
-	spinner.color = 'green';
-	spinner.text = 'downloading template……';
-	spinner.start()
-	
-	download(`woodccc/airbi-template-${type}`, projectName, { clone: true }, function(err) {
-		if (err) {
-			log(chalk.red(`Error: ${err}`))
-			spinner.stop()
-		} else {
-			log('')
-			log(chalk.green('success!'))
-			log(chalk.white('please run '), chalk.green(`cd ${projectName} && npm i && npm start`), chalk.white('to start it'))
-			spinner.stop()
-		}
-	})
-});
 
 commander
 	.version('1.0.0')
@@ -56,7 +36,28 @@ commander
 	.command('init')
 	.option('-i, --init', 'init a project')
 	.action(() => {
-	
+		inquirer.prompt(questions).then(answers => {
+			const { projectName, type } = answers
+			
+			spinner.color = 'green';
+			spinner.text = 'downloading template……';
+			spinner.start()
+			
+			download(`woodccc/airbi-template-${type}`, projectName, { clone: true }, function(err) {
+				if (err) {
+					spinner.text = `Error: ${err}`;
+					spinner.fail()
+				} else {
+					const startCmd = projectName === 'frontend' ? 'npm start' : 'npm run dev'
+					
+					spinner.text = 'download success!';
+					spinner.succeed()
+					
+					log(chalk.white('please run '), chalk.bgBlue(`cd ${projectName} && npm i && ${startCmd}`), chalk.white('to start it'))
+					spinner.stop()
+				}
+			})
+		});
 	})
 
 commander.parse(process.argv)
